@@ -1,0 +1,39 @@
+services:
+  frontend:
+    build: frontend
+    ports:
+     - 3000:3000
+    networks:
+      - mern
+    env_file:
+      - "frontend/.env"
+  
+  backend:
+    build: backend
+    ports:
+     - 4000:4000
+    networks:
+     - mern
+    depends_on:
+      - mongo
+    env_file:
+      - "backend/.env"
+    environment:
+      - DB_URI=mongodb://mongo:27017/lambda
+  
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    networks:
+      - mern
+    volumes:
+      - /home/ubuntu/mongo-data:/data/db
+  
+networks:
+  mern:
+      driver: bridge
+
+volumes:
+  mongo-data:
+    external: true

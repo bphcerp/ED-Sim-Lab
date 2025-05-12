@@ -1,0 +1,4 @@
+portal.lambda-india.com, www.portal.lambda-india.com {
+    reverse_proxy /api/* localhost:4000
+    reverse_proxy localhost:3000
+}
