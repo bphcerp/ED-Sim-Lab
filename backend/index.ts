@@ -54,11 +54,11 @@ app.use('/api/account', accountRoutes);
 app.use(express.static("public"))
 
 app.get('/api', (req: Request, res: Response) => {
-  res.send('Welcome to LAMBDA LAB ERP API')
+  res.send('Welcome to ED Sim LAB ERP API')
 });
 
 app.get('/api/check-auth',authenticateToken, (req: Request, res: Response) => {
-  res.send('Welcome to LAMBDA LAB ERP API (Authenticated)')
+  res.send('Welcome to ED Sim LAB ERP API (Authenticated)')
 });
 
 app.get('/api/stats', async (req: Request, res: Response) => {

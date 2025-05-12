@@ -75,7 +75,7 @@ const SignInUpPane = () => {
 
     return (
         <div className="SignInUpPane flex flex-col items-center w-3/4 shadow-lg bg-gray-50 text-gray-900 p-3">
-            <span className="text-2xl mb-3">LAMBDA Sign In</span>
+            <span className="text-2xl mb-3">ED Simulation Lab Sign In</span>
             <div className="inputArea w-full grow p-5">
                 <div className="flex flex-col w-full h-full">
                     {

@@ -19,7 +19,7 @@ services:
     env_file:
       - "backend/.env"
     environment:
-      - DB_URI=mongodb://mongo:27017/lambda
+      - DB_URI=mongodb://mongo:27017/edsim
   
   mongo:
     image: mongo

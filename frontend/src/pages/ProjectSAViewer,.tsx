@@ -93,7 +93,7 @@ const MyDoc = ({
             <Page size="A4" style={{ padding: 20, fontFamily: 'Noto Sans' }}>
 
                 <Text style={{ fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
-                    LAMBDA
+                    Electronic Devices Simulation Lab
                 </Text>
 
                 <Text style={{ fontSize: 10, textAlign: 'center', marginBottom: 5 }}>

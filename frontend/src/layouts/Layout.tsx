@@ -43,7 +43,7 @@ const Layout: FunctionComponent = () => {
             />
           )}
           <Link to="/" className="flex items-center">
-            <img className="w-32 h-auto" src="/logo.jpg" alt="Company Logo" />
+            <span className="text-xl tracking-widest text-gray-600">ED Simulation Laboratory</span>
           </Link>
         </div>
         <div className="flex items-center">

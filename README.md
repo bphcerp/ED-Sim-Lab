@@ -1,4 +1,4 @@
-# LAMBDA Inventory Portal
+# ED Sim Lab Inventory Portal
 
 > 🚫 **IF THERE ARE MULTIPLE PEOPLE WORKING ON THE REPO, DO NOT COMMIT DIRECTLY TO MAIN. MAKE A NEW BRANCH AND OPEN A PULL REQUEST FOR OTHERS TO REVIEW.**
 
@@ -63,36 +63,5 @@
 - The SSL Certification and HTTP->HTTPS forwarding is taken care by caddy (Check `docker-compose.yml` and `Caddyfile` for more information)
 
 - Caddy is setup to reverse proxy `/` to frontend ( `PORT 3000` ) and `/api` to backend ( `PORT 4000` )
-
-### Maintenance Information
-
-- SSH into the server using the credentials given to you
-
-```bash
-ssh -i <public_ssh_key> opc@portal.lambda-india.com
-```
-
-- To make starting, stopping and restarting easier, a service `lambda-finance` is setup. 
-
-- The .service file can be found at `/etc/systemd/system/lambda-finance.service`
-
-Command Reference:
-
-
-```bash
-
-#To start the service
-sudo systemctl start lambda-finance
-
-#To stop the service
-sudo systemctl stop lambda-finance
-
-#To restart the service
-sudo systemctl restart lambda-finance
-
-#To view the logs
-journalctl -u lambda-finance -r
-
-```
 
 

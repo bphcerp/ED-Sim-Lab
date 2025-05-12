@@ -13,6 +13,6 @@ jobs:
     steps:
       - name: clone repo and update
         run: |
-          cd /home/ubuntu/lambda-finance
+          cd /home/ubuntu/edsim
           git pull
           docker compose up --build -d
