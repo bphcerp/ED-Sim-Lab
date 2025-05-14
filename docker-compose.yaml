@@ -28,7 +28,7 @@ services:
     networks:
       - mern
     volumes:
-      - /home/ubuntu/mongo-data:/data/db
+      - /home/ubuntu/edsim-mongo-data:/data/db
   
 networks:
   mern:
