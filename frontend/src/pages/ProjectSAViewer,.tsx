@@ -93,11 +93,7 @@ const MyDoc = ({
             <Page size="A4" style={{ padding: 20, fontFamily: 'Noto Sans' }}>
 
                 <Text style={{ fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
-                    Electronic Devices Simulation Lab
-                </Text>
-
-                <Text style={{ fontSize: 10, textAlign: 'center', marginBottom: 5 }}>
-                    Laboratory for Antenna, Microwave and e-Beam Devices, and Applications
+                    Nano Scale Device Lab
                 </Text>
 
                 <Text style={{ fontSize: 8, textAlign: 'center', marginBottom: 20 }}>

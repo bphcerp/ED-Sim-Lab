@@ -2,7 +2,7 @@ services:
   frontend:
     build: frontend
     ports:
-     - 3000:3000
+     - 3200:3000
     networks:
       - mern
     env_file:
@@ -11,7 +11,7 @@ services:
   backend:
     build: backend
     ports:
-     - 4000:4000
+     - 4200:4000
     networks:
      - mern
     depends_on:
@@ -24,7 +24,7 @@ services:
   mongo:
     image: mongo
     ports:
-      - 27017:27017
+      - 27010:27017
     networks:
       - mern
     volumes:

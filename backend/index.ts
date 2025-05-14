@@ -18,14 +18,6 @@ import morgan from 'morgan'
 
 dotenv.config();
 
-const interval = 30000;
-
-function keepAlive() {
-  fetch(process.env.BASE_URL!)
-}
-
-setInterval(keepAlive, interval)
-
 const app = express()
 const PORT = process.env.PORT!
 
@@ -54,11 +46,11 @@ app.use('/api/account', accountRoutes);
 app.use(express.static("public"))
 
 app.get('/api', (req: Request, res: Response) => {
-  res.send('Welcome to ED Sim LAB ERP API')
+  res.send('Welcome to Nano Scale Device Lab Inventory Portal API')
 });
 
 app.get('/api/check-auth',authenticateToken, (req: Request, res: Response) => {
-  res.send('Welcome to ED Sim LAB ERP API (Authenticated)')
+  res.send('Welcome to  Nano Scale Device Lab Inventory Portal API (Authenticated)')
 });
 
 app.get('/api/stats', async (req: Request, res: Response) => {

@@ -43,7 +43,7 @@ const Layout: FunctionComponent = () => {
             />
           )}
           <Link to="/" className="flex items-center">
-            <span className="text-xl tracking-widest text-gray-600">ED Simulation Laboratory</span>
+            <span className="text-xl tracking-widest text-gray-600">Nano Scale Device Lab</span>
           </Link>
         </div>
         <div className="flex items-center">

@@ -63,7 +63,7 @@ router.post('/login', async (req: Request, res: Response) => {
 		let user = await UserModel.findOne({ email });
 
 		if (!user) {
-			res.status(401).send({message : "You are not allowed to login to this portal. Please contact ED Sim Lab."})
+			res.status(401).send({message : "You are not allowed to login to this portal. Please contact the laboratory."})
 			return
 		}
 

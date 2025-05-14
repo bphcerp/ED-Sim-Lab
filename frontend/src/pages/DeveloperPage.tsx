@@ -52,7 +52,7 @@ const DeveloperPage: FunctionComponent = () => {
                 ))}
             </div>
             <div className="text-xl flex justify-center items-center space-x-3 text-gray-700 text-center max-w-2xl">
-                <span>Made for ED Sim Laboratory under the supervision of</span>
+                <span>Made for Nano Scale Device Lab under the supervision of</span>
             </div>
             {supervisors.map((supervisor) => (
 
