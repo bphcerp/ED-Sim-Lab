@@ -53,15 +53,15 @@ const ProjectList: FunctionComponent = () => {
         }),
         columnHelper.accessor("funding_agency", {
             header: "Funding Agency",
+            enableColumnFilter: true,
+        }),
+        columnHelper.accessor("project_title", {
+            header: "Project Title",
             cell: (info) => (
                 <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
                     {info.getValue()}
                 </Link>
             ),
-            enableColumnFilter: true,
-        }),
-        columnHelper.accessor("project_title", {
-            header: "Project Title",
             enableColumnFilter: true,
         }),
         columnHelper.accessor("start_date", {

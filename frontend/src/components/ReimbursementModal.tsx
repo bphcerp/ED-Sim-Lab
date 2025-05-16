@@ -81,7 +81,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                 ))}
                                 {instituteExpenses.map((expense, key) => (
                                     <tr key={expense._id} className="border-t">
-                                        <td className="py-3 px-6 text-center text-gray-600">{key + 1}.</td>
+                                        <td className="py-3 px-6 text-center text-gray-600">{reimbursements.length + key + 1}.</td>
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             {new Date(expense.createdAt).toLocaleDateString('en-IN')}
                                         </td>

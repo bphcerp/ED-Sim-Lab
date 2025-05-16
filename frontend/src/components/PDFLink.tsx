@@ -1,4 +1,5 @@
 import { FunctionComponent, ReactNode } from "react";
+import { toastInfo } from "../toasts";
 
 interface PDFLinkProps {
     url: string;
@@ -9,6 +10,8 @@ const PDFLink: FunctionComponent<PDFLinkProps> = ({ url, children }) => {
 
     const handleClick = async (event: React.MouseEvent) => {
         event.preventDefault(); 
+
+        toastInfo("Fetching PDF...");
 
         try {
             

@@ -22,3 +22,6 @@ export const toastSuccess = (message : string) => {
 export const toastWarn = (message : string) => {
     toast.warn(message, config);
 }
+export const toastInfo = (message : string) => {
+    toast.info(message, config);
+}

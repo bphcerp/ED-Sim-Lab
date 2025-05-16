@@ -77,8 +77,8 @@ export interface Project {
     funding_agency: string;
     project_id: string
     project_title: string
-    start_date: Date | null;
-    end_date: Date | null;
+    start_date: Date;
+    end_date: Date;
     project_heads: {
         [key: string]: number[];
     };

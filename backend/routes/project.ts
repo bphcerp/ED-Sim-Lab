@@ -404,7 +404,7 @@ router.get('/', async (req: Request, res: Response) => {
                     projectHeads.forEach((allocations, head) => {
                         const allocation = allocations[curr];
                         const headExpense = project_head_expenses[head] || 0;
-                        const carryForward = curr ? project.carry_forward!.get(head)![curr - 1] : 0
+                        const carryForward = (curr ? project.carry_forward!.get(head)![curr - 1] : 0) ?? 0
 
                         allocations[curr] = allocation + carryForward - headExpense;
                         projectHeads.set(head, [allocations[curr]])
@@ -419,6 +419,7 @@ router.get('/', async (req: Request, res: Response) => {
 
         res.send(filteredProjects);
     } catch (error) {
+        console.error('Error fetching projects:', error);
         res.status(500).json({ message: 'Error fetching projects', error });
     }
 });
@@ -468,6 +469,43 @@ router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
         console.error(`Error fetching sanction letter for project ID ${req.params.id}: ${(error as Error).message}`);
         res.status(500).json({ message: 'Error fetching sanction letter', error: (error as Error).message });
         return;
+    }
+});
+
+//Delete Project Head
+router.delete('/:id/:head', async (req: Request, res: Response) => {
+    try {
+        const project = await ProjectModel.findById(req.params.id).lean();
+        if (!project) {
+            res.status(404).json({ message: 'Project not found' });
+        } else {
+            const projectHead = req.params.head;
+            const projectHeads = project.project_heads;
+            const carryForward = project.carry_forward
+            const negativeHeads = project.negative_heads
+
+            if (!projectHeads[projectHead]) {
+                res.status(404).json({ message: 'Project head not found' });
+                return;
+            }
+
+            const projectHeadHasReimbursements = await ReimbursementModel.findOne({ project: project._id, projectHead })
+            const projectHeadHasInstituteExpenses = await InstituteExpenseModel.findOne({ project: project._id, projectHead })
+
+            if (projectHeadHasReimbursements || projectHeadHasInstituteExpenses) {
+                res.status(409).send({ message: "Cannot delete head, it has expenses filed against. Please delete them and try again." })
+                return
+            }
+
+            delete projectHeads[projectHead]
+            delete carryForward![projectHead]
+            
+
+            await ProjectModel.updateOne({ _id: req.params.id }, { project_heads: projectHeads, carry_forward: carryForward, negative_heads: negativeHeads.filter((head: string) => head !== projectHead) });
+            res.status(204).json({ message: 'Project head deleted successfully' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting project head', error });
     }
 });
 
