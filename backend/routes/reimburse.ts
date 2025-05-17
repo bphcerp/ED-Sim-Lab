@@ -34,8 +34,8 @@ router.get('/:projectId', async (req, res) => {
         if (exportData) {
             const workbook = new Workbook()
 
-            workbook.creator = 'LAMBDA Lab, BITS Hyderabad'
-            workbook.lastModifiedBy = 'LAMBDA Lab, BITS Hyderabad'
+            workbook.creator = 'Nano Scale Device Lab, BITS Hyderabad'
+            workbook.lastModifiedBy = 'Nano Scale Device Lab, BITS Hyderabad'
             workbook.created = new Date()
             workbook.modified = new Date()
 
