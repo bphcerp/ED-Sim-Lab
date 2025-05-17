@@ -1,7 +1,6 @@
 import { FunctionComponent } from 'react';
 import { Modal, Button } from 'flowbite-react';
 import { InstituteExpense, Reimbursement } from '../types';
-import PDFLink from './PDFLink';
 import { Link } from 'react-router';
 
 interface ReimbursementModalProps {
@@ -67,16 +66,14 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                             <ul className="list-disc list-inside">
                                                 {reimbursement.expenses.map((expense, index) => (
                                                     <Link className='hover:underline text-blue-600'
-                                                    to={`/expenses?showRowId=${expense._id}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer">
-                                                    <li key={index}>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}</li></Link>
+                                                        to={`/expenses?showRowId=${expense._id}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer">
+                                                        <li key={index}>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}</li></Link>
                                                 ))}
                                             </ul>
                                         </td>
-                                        <td className="py-3 px-6 text-gray-600 flex justify-center items-center">
-                                            {reimbursement.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/reimburse/${reimbursement._id}/reference`}>View</PDFLink> : "-"}
-                                        </td>
+                                        <td className="py-3 px-6 text-blue-600 hover:underline">{reimbursement.referenceURL ? <Link target="_blank" rel="noopener noreferrer" to={reimbursement.referenceURL}>View</Link> : "-"}</td>
                                     </tr>
                                 ))}
                                 {instituteExpenses.map((expense, key) => (
@@ -97,7 +94,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                         </td>
                                         <td className="py-3 px-6 text-gray-600">Institute Expense</td>
                                         <td className="py-3 px-6 text-gray-600">NA</td>
-                                        {expense.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${expense._id}/reference?type=Institute`}>View</PDFLink> : "-"}
+                                        <td className="py-3 px-6 text-blue-600 hover:underline">{expense.referenceURL ? <Link target="_blank" rel="noopener noreferrer" to={expense.referenceURL}>View</Link> : "-"}</td>
                                     </tr>
                                 ))}
                                 <tr className="border-t bg-gray-100 font-semibold">

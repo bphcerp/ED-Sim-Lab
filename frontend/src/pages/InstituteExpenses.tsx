@@ -6,7 +6,6 @@ import { InstituteExpense } from '../types';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import { createColumnHelper } from '@tanstack/react-table';
 import { Link } from 'react-router';
-import PDFLink from '../components/PDFLink';
 import AddExpenseModal from '../components/AddExpenseModal';
 
 export const InstituteExpensesPage: FunctionComponent = () => {
@@ -56,9 +55,9 @@ export const InstituteExpensesPage: FunctionComponent = () => {
                 filterType: 'dropdown'
             }
         }),
-        columnHelper.accessor((row) => `${row.project.funding_agency}-${row.project.project_title}` , {
+        columnHelper.accessor((row) => `${row.project.funding_agency}-${row.project.project_title}`, {
             header: 'Project',
-            cell: ({getValue, row}) => <Link className='hover:underline text-blue-600'
+            cell: ({ getValue, row }) => <Link className='hover:underline text-blue-600'
                 to={`/project/${row.original.project._id}`}
                 target="_blank"
                 rel="noopener noreferrer">
@@ -86,9 +85,9 @@ export const InstituteExpensesPage: FunctionComponent = () => {
             cell: (info) => info.getValue() ? `${info.getValue()}%` : 'NA',
             enableColumnFilter: false
         }),
-        columnHelper.accessor("reference_id", {
+        columnHelper.accessor("referenceURL", {
             header: "Reference",
-            cell: ({ row }) => row.original.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${row.original._id}/reference?type=Institute`}>View</PDFLink> : "-",
+            cell: ({ getValue }) => getValue() ? <Link target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" to={getValue()!}>View</Link> : "-",
             enableColumnFilter: false,
             enableSorting: false,
         }),
@@ -166,13 +165,13 @@ export const InstituteExpensesPage: FunctionComponent = () => {
 
     return (
         <>
-            { selectedExpense && <AddExpenseModal
+            {selectedExpense && <AddExpenseModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 edit="Institute"
                 editData={selectedExpense}
                 onSubmit={handleEditExpense}
-            /> }
+            />}
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}

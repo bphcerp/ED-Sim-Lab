@@ -2,10 +2,8 @@ import express, { Request, Response } from 'express';
 import { ExpenseModel, InstituteExpenseModel } from '../models/expense';
 import { CategoryModel } from '../models/category';
 import { authenticateToken } from '../middleware/authenticateToken';
-import mongoose, { ObjectId, Schema } from 'mongoose';
+import { ObjectId, Schema } from 'mongoose';
 import { AccountModel } from '../models/account';
-import multer from 'multer';
-import { Readable } from 'stream';
 import { ProjectModel } from '../models/project';
 import { getCurrentIndex } from './project';
 import { ReimbursementModel } from '../models/reimburse';
@@ -32,19 +30,7 @@ interface MemberExpenseSummary {
   totalDue: number;
 }
 
-let gfs: mongoose.mongo.GridFSBucket;
-const conn = mongoose.connection;
-
 router.use(authenticateToken);
-
-conn.once("open", () => {
-  gfs = new mongoose.mongo.GridFSBucket(conn.db!, {
-    bucketName: "references"
-  });
-});
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
 
 const VALID_SETTLED_STATUS = ['Current', 'Savings'] as const;
 
@@ -53,29 +39,8 @@ const validateCategory = async (categoryId: Schema.Types.ObjectId): Promise<bool
   return !!categoryExists;
 };
 
-router.post('/', upload.single('referenceDocument'), async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const expenseData = req.body;
-
-  let reference_id: mongoose.Types.ObjectId | null = null
-
-  if (req.file) {
-    const readableStream = new Readable();
-    readableStream.push(req.file.buffer);
-    readableStream.push(null);
-
-    const uploadStream = gfs.openUploadStream(req.file.originalname, {
-      contentType: req.file.mimetype || 'application/octet-stream'
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      readableStream.pipe(uploadStream)
-        .on("error", (err) => reject(err))
-        .on("finish", () => {
-          reference_id = uploadStream.id;
-          resolve();
-        });
-    });
-  }
 
   try {
     if (!await validateCategory(expenseData.category)) {
@@ -112,7 +77,6 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
 
       expense = new InstituteExpenseModel({
         ...expenseData,
-        reference_id,
         pd_ref: pd_entry?._id,
         year_or_installment: getCurrentIndex(project),
         createdAt: new Date(),
@@ -137,7 +101,6 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
 
       expense = new ExpenseModel({
         ...expenseData,
-        reference_id,
         directExpense: true,
         settled: accountEntry._id,
         createdAt: new Date(),
@@ -147,7 +110,6 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
     else {
       expense = new ExpenseModel({
         ...expenseData,
-        reference_id,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -322,60 +284,6 @@ router.get('/member-expenses', async (req: Request, res: Response) => {
     console.error('Error fetching member expenses:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
-});
-
-router.get('/:id/reference', async (req: Request, res: Response) => {
-    try {
-        const { type } = req.query;
-
-        if (!['Normal', 'Institute'].includes(type as string)) {
-            res.status(400).json({ message: 'Invalid type' });
-            return
-        }
-
-        const expense = type === 'Normal' ?  await ExpenseModel.findById(req.params.id) : await InstituteExpenseModel.findById(req.params.id)
-
-        if (!expense) {
-            console.error(`Expense not found for ID: ${req.params.id}`);
-            res.status(404).json({ message: 'Expense not found' });
-            return;
-        }
-
-        if (!expense.reference_id) {
-            console.error(`No reference document found for reimbursement ID: ${req.params.id}`);
-            res.status(404).json({ message: 'Reference document not found for this reimbursement' });
-            return;
-        }
-
-        const fileId = expense.reference_id;
-
-
-        const downloadStream = gfs.openDownloadStream(fileId);
-
-        const filename = `reference_${expense.id}`.replace(/\s/g, '_')
-
-
-        res.set('Content-Type', 'application/pdf');
-        res.set('Content-Disposition', `inline; filename=${filename}`);
-
-
-        downloadStream.on('error', (error) => {
-            console.error(`Error fetching file: ${error.message}`);
-            res.status(404).send('File not found');
-            return;
-        });
-
-
-        downloadStream.pipe(res).on('finish', () => {
-            console.log('File streamed successfully.');
-        });
-
-        return;
-    } catch (error) {
-        console.error(`Error fetching reference document for expense ID ${req.params.id}: ${(error as Error).message}`);
-        res.status(500).json({ message: 'Error fetching reference document', error: (error as Error).message });
-        return;
-    }
 });
 
 router.patch('/:id', async (req: Request, res: Response) => {

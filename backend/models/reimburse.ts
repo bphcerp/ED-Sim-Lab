@@ -9,7 +9,7 @@ const reimbursementSchema = new Schema({
     paidStatus: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
     description: { type: String, default: null },
-    reference_id: { type: Schema.Types.ObjectId, ref: 'references.files' },
+    referenceURL: { type: String, default: null },
     year_or_installment: { type: Number, required: true },
     acc_entry: { type: mongoose.Schema.Types.ObjectId, ref: 'account', default : null }
 });

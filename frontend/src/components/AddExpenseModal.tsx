@@ -1,4 +1,4 @@
-import { Button, Modal, Label, TextInput, Select, FileInput, Textarea, ToggleSwitch, Radio } from 'flowbite-react';
+import { Button, Modal, Label, TextInput, Select, Textarea, ToggleSwitch, Radio } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess, toastWarn } from '../toasts';
 import AddCategoryModal from './AddCategoryModal';
@@ -25,10 +25,10 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
   const [expenseType, setExpenseType] = useState<'Normal' | 'Institute'>(edit ?? 'Normal');
   const [paymentType, setPaymentType] = useState<'Direct' | 'Indirect'>((editData as Expense)?.directExpense ? 'Direct' : 'Indirect');
   const [directPaymentAcc, setDirectPaymentAcc] = useState<'Current' | 'Savings'>();
-  const [selectedProject, setSelectedProject] = useState((editData as InstituteExpense)?.project._id ?? '');
-  const [selectedProjectHead, setSelectedProjectHead] = useState((editData as InstituteExpense)?.projectHead ?? '');
-  const [overheadPercentage, setOverheadPercentage] = useState<number | string>((editData as InstituteExpense)?.overheadPercentage ?? '');
-  const [referenceDocument, setReferenceDocument] = useState<File | null>(null);
+  const [selectedProject, setSelectedProject] = useState(edit === 'Institute' ? (editData as InstituteExpense)?.project._id ?? '' : '');
+  const [selectedProjectHead, setSelectedProjectHead] = useState(edit === 'Institute' ? (editData as InstituteExpense)?.projectHead ?? '' : '');
+  const [overheadPercentage, setOverheadPercentage] = useState<number | string>(edit === 'Institute' ? (editData as InstituteExpense)?.overheadPercentage ?? '' : '');
+  const [referenceURL, setReferenceURL] = useState<string>((editData as Expense)?.referenceURL ?? '');
 
   const fetchCategories = async () => {
     try {
@@ -104,7 +104,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
 
   const handleSubmit = () => {
     if (expenseReason && category && amount && ((expenseType === 'Normal' && paymentType == 'Indirect') ? paidBy : true && (expenseType === 'Institute' && !!selectedProject && !!selectedProjectHead))) {
-      const expenseData: any = { expenseReason, category, amount: Number(amount), ...((expenseType === 'Normal' && paymentType == 'Indirect') ? { paidBy } : {}), description, referenceDocument, type: expenseType };
+      const expenseData: any = { expenseReason,paymentType,referenceURL, category, amount: Number(amount), ...((expenseType === 'Normal' && paymentType == 'Indirect') ? { paidBy } : {}), description, type: expenseType };
       if (expenseType === 'Institute') {
         expenseData.projectId = selectedProject;
         expenseData.projectHead = selectedProjectHead;
@@ -113,6 +113,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
       if (paymentType === 'Direct') {
         expenseData.paidDirectWith = directPaymentAcc
       }
+      console.log(expenseData);
       onSubmit(expenseData);
       onClose();
     }
@@ -121,7 +122,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
 
   return (
     <Modal size="4xl" show={isOpen} onClose={onClose}>
-      <Modal.Header>{ !edit ? "Add New": "Edit" } Expense</Modal.Header>
+      <Modal.Header>{!edit ? "Add New" : "Edit"} Expense</Modal.Header>
       <Modal.Body>
         <AddCategoryModal
           isOpen={isCategoryModalOpen}
@@ -285,32 +286,14 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
               </div>}
           </div>}
 
-          {!edit && <div>
-            <Label htmlFor="referenceDocument" value="Reference Document (PDF only)" />
-            <FileInput
-              id="referenceDocument"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-
-                if (file.type !== 'application/pdf') {
-                  toastWarn('Please upload a PDF file.');
-                  e.target.value = ''; // Reset the input
-                  return;
-                }
-
-                const maxSizeInMB = 10;
-                if (file.size > maxSizeInMB * 1024 * 1024) {
-                  toastWarn(`File size exceeds ${maxSizeInMB} MB.`);
-                  e.target.value = ''; // Reset the input
-                  return;
-                }
-
-                setReferenceDocument(file);
-              }}
-              accept="application/pdf"
+          <div>
+            <Label htmlFor="referenceURL" value="Reference Document Link" />
+            <TextInput
+              id="referenceURL"
+              value={referenceURL}
+              onChange={(e) => setReferenceURL(e.target.value)}
             />
-          </div>}
+          </div>
 
           <div>
             <Label htmlFor="description" value="Description" />

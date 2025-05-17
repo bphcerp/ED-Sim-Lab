@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Select, TextInput, FileInput, Label } from 'flowbite-react';
+import { Modal, Button, Select, TextInput, Label } from 'flowbite-react';
 import { toastError, toastWarn } from '../toasts';
 import { Expense, Project } from '../types';
 
@@ -24,7 +24,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
     const [description, setDescription] = useState('');
     const [selectedProject, setSelectedProject] = useState('');
     const [selectedProjectHead, setSelectedProjectHead] = useState('');
-    const [referenceDocument, setReferenceDocument] = useState<File | null>(null);
+    const [referenceURL, setReferenceURL] = useState<string | null>(null);
 
     const totalExpenseAmount = selectedExpenses.reduce((acc, obj) => acc + obj.amount, 0);
 
@@ -50,7 +50,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
         e.preventDefault();
         const expenseIds = selectedExpenses.map((expense) => expense._id);
 
-        if (!selectedProject || !selectedProjectHead || !referenceDocument) {
+        if (!selectedProject || !selectedProjectHead) {
             toastWarn('Please fill out all fields.');
             return;
         }
@@ -63,7 +63,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                 description,
                 selectedProject,
                 selectedProjectHead,
-                referenceDocument,
+                referenceURL,
                 expenseIds,
                 totalAmount: totalExpenseAmount,
             });
@@ -81,7 +81,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
         setDescription('');
         setSelectedProject('');
         setSelectedProjectHead('');
-        setReferenceDocument(null);
+        setReferenceURL(null);
     };
 
     useEffect(() => {
@@ -170,29 +170,11 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             </div>
                         )}
                         <div>
-                            <Label htmlFor="referenceDocument" value="Reference Document (PDF only)" />
-                            <FileInput
-                                id="referenceDocument"
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-
-                                    if (file.type !== 'application/pdf') {
-                                        toastWarn('Please upload a PDF file.');
-                                        e.target.value = ''; // Reset the input
-                                        return;
-                                    }
-
-                                    const maxSizeInMB = 10;
-                                    if (file.size > maxSizeInMB * 1024 * 1024) {
-                                        toastWarn(`File size exceeds ${maxSizeInMB} MB.`);
-                                        e.target.value = ''; // Reset the input
-                                        return;
-                                    }
-
-                                    setReferenceDocument(file);
-                                }}
-                                accept="application/pdf"
+                            <Label htmlFor="referenceURL" value="Reference Document Link" />
+                            <TextInput
+                                value={referenceURL ?? ''}
+                                onChange={(e) => setReferenceURL(e.target.value)}
+                                placeholder="Enter reimbursement description"
                             />
                         </div>
                     </div>
@@ -201,8 +183,8 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             Cancel
                         </Button>
                         <Button type="submit" color="blue" disabled={selectedProject && selectedProjectHead && !projects.find((p) => p._id === selectedProject)?.negative_heads.includes(selectedProjectHead) &&
-                                    (projects.find((p) => p._id === selectedProject)!.project_heads[selectedProjectHead][0] <
-                                        totalExpenseAmount) || loading}>
+                            (projects.find((p) => p._id === selectedProject)!.project_heads[selectedProjectHead][0] <
+                                totalExpenseAmount) || loading}>
                             {loading ? 'Submitting...' : 'Submit Reimbursement'}
                         </Button>
                     </div>

@@ -19,7 +19,7 @@ export interface Expense {
     settled: Account | null;
     createdAt: Date;
     updatedAt: Date;
-    reference_id?: string | null;
+    referenceURL?: string | null;
     directExpense: boolean;
 }
 
@@ -33,7 +33,7 @@ export interface InstituteExpense {
     year_or_installment : number
     pd_ref : Account
     overheadPercentage: number;
-    reference_id?: string | null;
+    referenceURL?: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -63,7 +63,7 @@ export interface Reimbursement {
     projectHead: string;
     paidStatus: boolean;
     description: string
-    reference_id: string
+    referenceURL?: string | null
     year_or_installment : number
 }
 
@@ -90,8 +90,7 @@ export interface Project {
     total_amount: number;
     pis: Member[];
     copis: Member[];
-    sanction_letter?: File | null;
-    sanction_letter_file_id?: string;
+    sanction_letter_url: string | null;
     description: string
     note: string | null
     negative_heads: string[]

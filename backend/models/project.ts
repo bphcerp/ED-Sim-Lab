@@ -21,7 +21,7 @@ const projectSchema = new Schema({
     project_heads: { type: Map, of: [Number], required: true },
     pis: [{ type: Schema.Types.ObjectId, ref: 'members', required: true }],
     copis: [{ type: Schema.Types.ObjectId, ref: 'members', required: true }],
-    sanction_letter_file_id: { type: Schema.Types.ObjectId, ref: 'uploads.files' },
+    sanction_letter_url: { type: String, default: null },
     description: { type: String, default: null },
     note: { type: String, default: null },
     installments: { type: [installmentSchema], default: [] },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Select, TextInput, FileInput, Label } from 'flowbite-react';
+import { Modal, Button, Select, TextInput, Label } from 'flowbite-react';
 import { toastError, toastWarn } from '../toasts';
 import { CiSquareMinus } from "react-icons/ci";
 import { Project, Expense, Reimbursement } from '../types';
@@ -26,7 +26,7 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
     const [description, setDescription] = useState('');
     const [selectedProject, setSelectedProject] = useState('');
     const [selectedProjectHead, setSelectedProjectHead] = useState('');
-    const [referenceDocument, setReferenceDocument] = useState<File | null>(null);
+    const [referenceURL, setReferenceURL] = useState<string | null>(null);
     const [totalExpenseAmount, setTotalExpenseAmount] = useState(0);
 
     const fetchProjects = async () => {
@@ -60,7 +60,7 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
                 description,
                 selectedProject,
                 selectedProjectHead,
-                referenceDocument,
+                referenceURL,
                 expenseIds: expenseIds.filter(expenseId => !removedExpenses.includes(expenseId)),
                 totalAmount: totalExpenseAmount,
                 removedExpenses
@@ -79,7 +79,7 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
         setDescription('');
         setSelectedProject('');
         setSelectedProjectHead('');
-        setReferenceDocument(null);
+        setReferenceURL(null);
         setRemovedExpenses([]);
     };
 
@@ -98,6 +98,7 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
             setSelectedProject(reimbursement.project._id!);
             setSelectedProjectHead(reimbursement.projectHead);
             setTotalExpenseAmount(reimbursement.expenses.reduce((acc, obj) => acc + obj.amount, 0));
+            setReferenceURL(reimbursement.referenceURL ?? '');
         }
     }, [isOpen]);
 
@@ -116,7 +117,7 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
                                             key={expense._id}
                                             className="flex items-center space-x-4"
                                         >
-                                            <button type='button' onClick={() => handleRemoveExpense(expense)}><CiSquareMinus size={20} color='red'/></button>
+                                            <button type='button' onClick={() => handleRemoveExpense(expense)}><CiSquareMinus size={20} color='red' /></button>
                                             <span className="text-center font-bold">{expense.expenseReason}</span>
                                             <span>
                                                 {expense.amount.toLocaleString('en-IN', {
@@ -130,9 +131,9 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
                                 <div className='space-x-4'>
                                     <span className='font-semibold'>Total Amount: </span>
                                     <span>{totalExpenseAmount.toLocaleString('en-IN', {
-                                                    style: 'currency',
-                                                    currency: 'INR',
-                                                })}</span>
+                                        style: 'currency',
+                                        currency: 'INR',
+                                    })}</span>
                                 </div>
                             </div>
                             <TextInput
@@ -182,8 +183,8 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
                             {selectedProjectHead && (
                                 <div>
                                     {selectedProjectHead !== reimbursement.projectHead &&
-                                    !projects.find((p) => p._id === selectedProject)?.negative_heads.includes(selectedProjectHead) &&
-                                    projects.find((p) => p._id === selectedProject)!.project_heads[selectedProjectHead][0] <
+                                        !projects.find((p) => p._id === selectedProject)?.negative_heads.includes(selectedProjectHead) &&
+                                        projects.find((p) => p._id === selectedProject)!.project_heads[selectedProjectHead][0] <
                                         totalExpenseAmount ? (
                                         <p className="text-red-500">
                                             Selected head cannot cover the total expenses of {totalExpenseAmount.toLocaleString('en-IN', {
@@ -195,29 +196,11 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
                                 </div>
                             )}
                             <div>
-                                <Label htmlFor="referenceDocument" value="Reference Document (PDF only)" />
-                                <FileInput
-                                    id="referenceDocument"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-
-                                        if (file.type !== 'application/pdf') {
-                                            toastWarn('Please upload a PDF file.');
-                                            e.target.value = ''; // Reset the input
-                                            return;
-                                        }
-
-                                        const maxSizeInMB = 10;
-                                        if (file.size > maxSizeInMB * 1024 * 1024) {
-                                            toastWarn(`File size exceeds ${maxSizeInMB} MB.`);
-                                            e.target.value = ''; // Reset the input
-                                            return;
-                                        }
-
-                                        setReferenceDocument(file);
-                                    }}
-                                    accept="application/pdf"
+                                <Label htmlFor="referenceURL" value="Reference Document Link" />
+                                <TextInput
+                                    id="referenceURL"
+                                    value={referenceURL ?? ''}
+                                    onChange={(e) => setReferenceURL(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -234,7 +217,7 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
                                     selectedProjectHead !== reimbursement.projectHead &&
                                     !projects.find((p) => p._id === selectedProject)?.negative_heads.includes(selectedProjectHead) &&
                                     projects.find((p) => p._id === selectedProject)!.project_heads[selectedProjectHead][0] <
-                                        totalExpenseAmount ||
+                                    totalExpenseAmount ||
                                     loading
                                 }
                             >

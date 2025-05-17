@@ -6,14 +6,12 @@ import { MdOutlineDescription } from "react-icons/md";
 import SettleExpenseModal from '../components/SettleExpenseModal';
 import FileReimbursementModal from '../components/FileReimbursementModal';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
-import EditExpenseModal from '../components/EditExpenseModal';
 import DescriptionModal from '../components/DescriptionModal';
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { EditExpenseData, Expense } from '../types';
-import PDFLink from '../components/PDFLink';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 const ExpensesPage: React.FC = () => {
     const [expenses, setExpenses] = useState<Array<Expense>>([]);
@@ -131,9 +129,9 @@ const ExpensesPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false
         }),
-        columnHelper.accessor("reference_id", {
+        columnHelper.accessor("referenceURL", {
             header: "Reference",
-            cell: ({ row }) => row.original.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${row.original._id}/reference?type=Normal`}>View</PDFLink> : "-",
+            cell: ({ getValue }) => getValue() ? <Link target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" to={getValue()!}>View</Link> : "-",
             enableColumnFilter: false,
             enableSorting: false,
         }),
@@ -195,24 +193,25 @@ const ExpensesPage: React.FC = () => {
 
     const handleFileReimbursement = async (formData: any) => {
         try {
-            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument } = formData;
+            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceURL } = formData;
 
-            const data = new FormData();
-            data.append('expenseIds', JSON.stringify(expenseIds));
-            data.append('projectId', selectedProject);
-            data.append('projectHead', selectedProjectHead);
-            data.append('totalAmount', totalAmount.toString());
-            data.append('title', reimbursementTitle);
-            data.append('description', description);
-
-            if (referenceDocument) {
-                data.append('referenceDocument', referenceDocument);
-            }
+            const data = {
+                expenseIds,
+                projectId: selectedProject,
+                projectHead: selectedProjectHead,
+                totalAmount,
+                title: reimbursementTitle,
+                description,
+                referenceURL,
+            };
 
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse`, {
                 method: 'POST',
                 credentials: 'include',
-                body: data,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
             });
 
             if (!response.ok) {
@@ -253,33 +252,37 @@ const ExpensesPage: React.FC = () => {
 
     const handleAddExpense = async (newExpense: any) => {
         try {
-            const formData = new FormData();
-            formData.append('expenseReason', newExpense.expenseReason);
-            formData.append('category', newExpense.category);
-            formData.append('amount', newExpense.amount.toString());
-            formData.append('description', newExpense.description);
-            formData.append('type', newExpense.type);
+            const body: any = {
+                expenseReason: newExpense.expenseReason,
+                category: newExpense.category,
+                amount: newExpense.amount,
+                description: newExpense.description,
+                type: newExpense.type,
+            };
 
-            if (newExpense.referenceDocument) {
-                formData.append('referenceDocument', newExpense.referenceDocument);
+            if (newExpense.referenceURL) {
+                body.referenceURL = newExpense.referenceURL;
             }
 
             if (newExpense.type === 'Institute') {
-                formData.append('project', newExpense.projectId);
-                formData.append('projectHead', newExpense.projectHead);
-                formData.append('overheadPercentage', newExpense.overheadPercentage.toString());
+                body.project = newExpense.projectId;
+                body.projectHead = newExpense.projectHead;
+                body.overheadPercentage = newExpense.overheadPercentage;
             } else {
                 if (newExpense.paymentType === 'Indirect') {
-                    formData.append('paidBy', newExpense.paidBy);
+                    body.paidBy = newExpense.paidBy;
                 } else if (newExpense.paymentType === 'Direct') {
-                    formData.append('paidDirectWith', newExpense.paidDirectWith);
+                    body.paidDirectWith = newExpense.paidDirectWith;
                 }
             }
 
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {
                 method: 'POST',
                 credentials: 'include',
-                body: formData,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
             });
 
             if (!response.ok) {
@@ -341,9 +344,15 @@ const ExpensesPage: React.FC = () => {
     return expenses ? (
         <div className="flex flex-col">
             <AddExpenseModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSubmit={handleAddExpense}
+                key={selectedExpense ? "edit" : "add"}
+                isOpen={isModalOpen || ( !!selectedExpense && isEditModalOpen)}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setSelectedExpense(null);
+                    setIsEditModalOpen(false)
+                }}
+                { ...selectedExpense ? { edit: 'Normal', editData: selectedExpense } : {} }
+                onSubmit={selectedExpense ? handleEditExpense : handleAddExpense}
             />
             <SettleExpenseModal
                 isOpen={isSettleModalOpen}
@@ -362,15 +371,6 @@ const ExpensesPage: React.FC = () => {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onDelete={handleDeleteExpense}
                 item={expenseToDelete?.expenseReason || ""}
-            />
-            <EditExpenseModal
-                isOpen={isEditModalOpen}
-                onClose={() => {
-                    setIsEditModalOpen(false);
-                    setSelectedExpense(null);
-                }}
-                expense={selectedExpense}
-                onSubmit={handleEditExpense}
             />
             <DescriptionModal
                 isOpen={isDescModalOpen}

@@ -22,7 +22,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
             copis: project?.copis || [],
             negative_heads: project?.negative_heads || [],
             project_id: project?.project_id || '',
-            project_title: project?.project_title || ''
+            project_title: project?.project_title || '',
+            sanction_letter_url: project?.sanction_letter_url || '',
         }
     });
 
@@ -37,9 +38,9 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     });
 
     const [faculties, setFaculties] = useState<Array<Member>>([]);
-    const [selectedPi, setSelectedPi] = useState<string | null>(null);  // Track selected PI for button click
-    const [selectedCopi, setSelectedCopi] = useState<string | null>(null); // Track selected Co-PI for button click
-    const [newHeadName, setNewHeadName] = useState<string>(''); // State to track the new head name
+    const [selectedPi, setSelectedPi] = useState<string | null>(null);  
+    const [selectedCopi, setSelectedCopi] = useState<string | null>(null)
+    const [newHeadName, setNewHeadName] = useState<string>('')
 
     const fetchFaculties = async () => {
         try {
@@ -62,7 +63,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     }, [project, reset]);
 
     const onSubmit = (submittedProject: Project) => {
-        console.log(submittedProject)
         onSave(submittedProject);
         reset()
         onClose();
@@ -87,18 +87,18 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     };
 
     const calculateNumberOfYears = (startDate: Date | string, endDate: Date | string) => {
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
 
 
-      const startYear = start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
-      const endYear = end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
+            const startYear = start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
+            const endYear = end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
 
-      const yearsDiff = endYear - startYear + 1;
-      return (yearsDiff >= 1 ? yearsDiff : 0);
-    }
-  };
+            const yearsDiff = endYear - startYear + 1;
+            return (yearsDiff >= 1 ? yearsDiff : 0);
+        }
+    };
 
     const handleAddHead = () => {
         if (newHeadName.trim() === '') {
@@ -107,7 +107,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
         }
 
         // Add the new head to the project_heads object
-        setValue(`project_heads.${newHeadName}`, new Array(project?.project_type === 'yearly' ? calculateNumberOfYears(project!.start_date,project!.end_date) : project!.installments!.length).fill(0)); // Initialize with 5 installments of 0
+        setValue(`project_heads.${newHeadName}`, new Array(project?.project_type === 'yearly' ? calculateNumberOfYears(project!.start_date, project!.end_date) : project!.installments!.length).fill(0)); // Initialize with 5 installments of 0
         setNewHeadName(''); // Reset the input field
     };
 
@@ -161,7 +161,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
             <Modal.Body>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="space-y-4">
-                        {/* Project ID Field */}
                         <div>
                             <Label htmlFor="projectId" value="Project ID" />
                             <TextInput
@@ -172,7 +171,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                             />
                         </div>
 
-                        {/* Project Title Field */}
                         <div>
                             <Label htmlFor="projectTitle" value="Project Title" />
                             <TextInput
@@ -183,7 +181,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                             />
                         </div>
 
-                        {/* Funding Agency Field */}
                         <div>
                             <Label htmlFor="fundingAgency" value="Funding Agency" />
                             <TextInput
@@ -191,6 +188,14 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                                 {...register("funding_agency", { required: true })}
                                 placeholder="Enter Funding Agency"
                                 className="mt-1"
+                            />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="sanction_letter" value="Sanction Letter Link" />
+                            <TextInput
+                                id="sanction_letter"
+                                {...register("sanction_letter_url")}
                             />
                         </div>
                     </div>
@@ -254,7 +259,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                         ))}
                     </div>
 
-                    {/* Total Amount Field */}
                     <div>
                         <Label htmlFor="totalAmount" value="Total Amount" />
                         <TextInput

@@ -9,9 +9,6 @@ import TableCustom from '../components/TableCustom';
 import { Reimbursement } from '../types';
 import { RiDeleteBin6Line, RiEdit2Line } from 'react-icons/ri';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
-import { Button } from 'flowbite-react';
-import AddReferenceModal from '../components/AddReferenceModal';
-import PDFLink from '../components/PDFLink';
 import EditReimbursementModal from '../components/EditReimbursementModal';
 
 const ReimbursementPage: React.FC = () => {
@@ -19,12 +16,10 @@ const ReimbursementPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [isPaidLoading, setIsPaidLoading] = useState(false);
     const [selectedReimbursements, setSelectedReimbursements] = useState<Set<string>>(new Set());
-    const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false)
     const [description, setDescription] = useState("")
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [reimbursementToDelete, setReimbursementToDelete] = useState<Reimbursement>();
-    const [reimbursementIdToAddRefTo, setReimbursementIdToAddRefTo] = useState<string>()
     const [reimbursementToEdit, setReimbursementToEdit] = useState<Reimbursement>()
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
@@ -92,17 +87,10 @@ const ReimbursementPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false
         }),
-        columnHelper.accessor("reference_id", {
+        columnHelper.accessor("referenceURL", {
             header: "Reference",
-            cell: ({ row }) =>
-                row.original.reference_id ? (
-                    <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/reimburse/${row.original._id}/reference`}>View</PDFLink>
-                ) : (
-                    <Button size="xs" color="red" onClick={() => {
-                        setReimbursementIdToAddRefTo(row.original._id)
-                        setIsReferenceModalOpen(true)
-                    }}>Add Reference</Button>
-                ),
+            cell: ({ getValue }) =>
+                <div className='flex justify-center'>{getValue() ? <Link className='text-blue-600 hover:underline' target="_blank" rel="noopener noreferrer" to={getValue()!}>View</Link> : "-"}</div>,
             enableColumnFilter: false,
             enableSorting: false,
         }),
@@ -157,36 +145,36 @@ const ReimbursementPage: React.FC = () => {
         setIsDeleteModalOpen(true);
     };
 
-    const handleEditReimbursement = async (formData : any) => {
+    const handleEditReimbursement = async (formData: any) => {
         if (!reimbursementToEdit) return;
         try {
+            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceURL, removedExpenses } = formData;
 
-            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument, removedExpenses } = formData;
-            
-            const data = new FormData();
-            data.append('expenses', JSON.stringify(expenseIds));
-            data.append('project', selectedProject);
-            data.append('projectHead', selectedProjectHead);
-            data.append('totalAmount', totalAmount.toString());
-            data.append('title', reimbursementTitle);
-            data.append('description', description);
-            data.append('removedExpenses', JSON.stringify(removedExpenses));
-
-            if (referenceDocument) {
-                data.append('referenceDocument', referenceDocument);
-            }
+            const payload = {
+                expenses: expenseIds,
+                project: selectedProject,
+                projectHead: selectedProjectHead,
+                totalAmount,
+                title: reimbursementTitle,
+                description,
+                removedExpenses,
+                referenceURL,
+            };
 
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/${reimbursementToEdit._id}`, {
                 credentials: "include",
                 method: 'PUT',
-                body : data
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
                 throw new Error((await response.json()).message ?? 'Failed to edit reimbursement');
             }
 
-            fetchReimbursements()
+            fetchReimbursements();
             toastSuccess('Reimbursement edited successfully');
         } catch (error) {
             toastError('Error editing reimbursement');
@@ -222,33 +210,6 @@ const ReimbursementPage: React.FC = () => {
     useEffect(() => {
         fetchReimbursements();
     }, []);
-
-    const handleReferenceSubmit = async (file: File) => {
-
-        const formData = new FormData()
-        formData.append("referenceDocument", file)
-        try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/${reimbursementIdToAddRefTo}/reference`, {
-                method: 'POST',
-                credentials: "include",
-                body: formData,
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to upload reference');
-            }
-
-            toastSuccess('Added the reference!');
-            fetchReimbursements();
-        } catch (error) {
-            toastError('Error uploading reference');
-            console.error('Error uploading reference', error);
-        }
-        finally {
-            setReimbursementIdToAddRefTo(undefined)
-            setIsReferenceModalOpen(false)
-        }
-    }
 
     const handleMarkAsPaid = async (unpaid : boolean = false) => {
         try {
@@ -295,11 +256,6 @@ const ReimbursementPage: React.FC = () => {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onDelete={handleDeleteReimbursement}
                 item={reimbursementToDelete?.title ?? ""}
-            />
-            <AddReferenceModal
-                isOpen={isReferenceModalOpen}
-                onClose={() => setIsReferenceModalOpen(false)}
-                onSubmit={handleReferenceSubmit}
             />
              <EditReimbursementModal
                 isOpen={isEditModalOpen}

@@ -1,29 +1,13 @@
 import { Router, Response, Request } from "express";
 import { ProjectModel } from "../models/project";
-import multer from "multer";
 import mongoose from "mongoose";
-import { Readable } from "stream";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { ReimbursementModel } from "../models/reimburse";
 import { InstituteExpenseModel } from "../models/expense";
 
-
 const router: Router = Router();
-const conn = mongoose.connection;
-let gfs: mongoose.mongo.GridFSBucket;
 
 router.use(authenticateToken);
-
-
-conn.once("open", () => {
-    gfs = new mongoose.mongo.GridFSBucket(conn.db!, {
-        bucketName: "uploads"
-    });
-});
-
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
@@ -143,54 +127,11 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
 })
 
 
-router.post('/', upload.single('sanction_letter'), async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
     try {
         const data = req.body;
 
-        const startDate = data.start_date ? new Date(data.start_date) : null;
-        const endDate = data.end_date ? new Date(data.end_date) : null;
-        const projectHeads = data.project_heads ? JSON.parse(data.project_heads) as number[] : [];
-        const parsedPis = data.pis ? JSON.parse(data.pis) : [];
-        const parsedCopis = data.copis ? JSON.parse(data.copis) : [];
-        const parsedInstallments = data.installments ? JSON.parse(data.installments) : [];
-
-        let sanctionLetterFileId: mongoose.Types.ObjectId | null = null;
-
-        if (req.file) {
-            const readableStream = new Readable();
-            readableStream.push(req.file.buffer);
-            readableStream.push(null);
-
-            const uploadStream = gfs.openUploadStream(req.file.originalname, {
-                contentType: req.file.mimetype || 'application/octet-stream'
-            });
-
-            await new Promise<void>((resolve, reject) => {
-                readableStream.pipe(uploadStream)
-                    .on("error", (err) => reject(err))
-                    .on("finish", () => {
-                        sanctionLetterFileId = uploadStream.id;
-                        resolve();
-                    });
-            });
-        }
-
-        const newProject = new ProjectModel({
-            project_id: data.project_id,
-            project_title: data.project_title,
-            funding_agency: data.funding_agency,
-            project_type: data.project_type,
-            start_date: startDate,
-            end_date: endDate,
-            project_heads: projectHeads,
-            total_amount: Number(data.total_amount),
-            pis: parsedPis,
-            copis: parsedCopis,
-            sanction_letter_file_id: sanctionLetterFileId,
-            description: data.description,
-            installments: parsedInstallments,
-            negative_heads: data.negative_heads
-        });
+        const newProject = new ProjectModel(data);
 
         const savedProject = await newProject.save();
         res.status(201).json(savedProject);
@@ -424,54 +365,6 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
-
-router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
-    try {
-        const project = await ProjectModel.findById(req.params.id);
-
-        if (!project) {
-            console.error(`Project not found for ID: ${req.params.id}`);
-            res.status(404).json({ message: 'Project not found' });
-            return;
-        }
-
-        if (!project.sanction_letter_file_id) {
-            console.error(`No sanction letter found for project ID: ${req.params.id}`);
-            res.status(404).json({ message: 'Sanction letter not found for this project' });
-            return;
-        }
-
-        const fileId = project.sanction_letter_file_id;
-
-
-        const downloadStream = gfs.openDownloadStream(fileId);
-
-        const filename = `${project.funding_agency}_sanction_letter.pdf`.replace(/\s/g, '_')
-
-
-        res.set('Content-Type', 'application/pdf');
-        res.set('Content-Disposition', `inline; filename=${filename}`);
-
-
-        downloadStream.on('error', (error) => {
-            console.error(`Error fetching file: ${error.message}`);
-            res.status(404).send('File not found');
-            return;
-        });
-
-
-        downloadStream.pipe(res).on('finish', () => {
-            console.log('File streamed successfully.');
-        });
-
-        return;
-    } catch (error) {
-        console.error(`Error fetching sanction letter for project ID ${req.params.id}: ${(error as Error).message}`);
-        res.status(500).json({ message: 'Error fetching sanction letter', error: (error as Error).message });
-        return;
-    }
-});
-
 //Delete Project Head
 router.delete('/:id/:head', async (req: Request, res: Response) => {
     try {
@@ -520,12 +413,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
             const projectInstituteExpenses = await InstituteExpenseModel.findOne({ project: toBeDeletedProject!._id })
             if (projectReimbursements || projectInstituteExpenses) res.status(409).send({ message: "Cannot delete, project has expenses filed against. Please delete them and try again." })
             else {
-                const sanction_letter_file_id = toBeDeletedProject.sanction_letter_file_id;
-
-                if (sanction_letter_file_id) {
-                    await gfs.delete(sanction_letter_file_id);
-                }
-
                 await ProjectModel.deleteOne(toBeDeletedProject)
                 res.status(204).send()
             };

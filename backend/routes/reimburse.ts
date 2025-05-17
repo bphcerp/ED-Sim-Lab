@@ -2,77 +2,17 @@ import express, { Request, Response } from 'express';
 import { ReimbursementModel } from '../models/reimburse';
 import { ExpenseModel, InstituteExpenseModel } from '../models/expense';
 import { authenticateToken } from '../middleware/authenticateToken';
-import { Readable } from "stream";
-import mongoose, { InferSchemaType, ObjectId } from 'mongoose';
+import mongoose, { ObjectId } from 'mongoose';
 import { ProjectModel } from '../models/project';
 import { AccountModel } from '../models/account';
-import multer from 'multer';
 import { getCurrentIndex } from './project';
 import { Workbook } from 'exceljs';
 
 const router = express.Router();
-const conn = mongoose.connection;
-export let gfs: mongoose.mongo.GridFSBucket;
 
 router.use(authenticateToken);
 
-conn.once("open", () => {
-    gfs = new mongoose.mongo.GridFSBucket(conn.db!, {
-        bucketName: "references"
-    });
-});
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
-
-router.get('/:id/reference', async (req: Request, res: Response) => {
-    try {
-        const reimbursement = await ReimbursementModel.findById(req.params.id);
-
-        if (!reimbursement) {
-            console.error(`Reimbursement not found for ID: ${req.params.id}`);
-            res.status(404).json({ message: 'Reimbursement not found' });
-            return;
-        }
-
-        if (!reimbursement.reference_id) {
-            console.error(`No reference document found for reimbursement ID: ${req.params.id}`);
-            res.status(404).json({ message: 'Reference document not found for this reimbursement' });
-            return;
-        }
-
-        const fileId = reimbursement.reference_id;
-
-
-        const downloadStream = gfs.openDownloadStream(fileId);
-
-        const filename = `reference_${reimbursement.title}`.replace(/\s/g, '_')
-
-
-        res.set('Content-Type', 'application/pdf');
-        res.set('Content-Disposition', `inline; filename=${filename}`);
-
-
-        downloadStream.on('error', (error) => {
-            console.error(`Error fetching file: ${error.message}`);
-            res.status(404).send('File not found');
-            return;
-        });
-
-
-        downloadStream.pipe(res).on('finish', () => {
-            console.log('File streamed successfully.');
-        });
-
-        return;
-    } catch (error) {
-        console.error(`Error fetching reference document for reimbursement ID ${req.params.id}: ${(error as Error).message}`);
-        res.status(500).json({ message: 'Error fetching reference document', error: (error as Error).message });
-        return;
-    }
-});
 
 router.get('/', async (req: Request, res: Response) => {
     try {
@@ -94,8 +34,8 @@ router.get('/:projectId', async (req, res) => {
         if (exportData) {
             const workbook = new Workbook()
 
-            workbook.creator = 'Nano Scale Device Lab, BITS Hyderabad'
-            workbook.lastModifiedBy = 'Nano Scale Device Lab, BITS Hyderabad'
+            workbook.creator = 'LAMBDA Lab, BITS Hyderabad'
+            workbook.lastModifiedBy = 'LAMBDA Lab, BITS Hyderabad'
             workbook.created = new Date()
             workbook.modified = new Date()
 
@@ -311,32 +251,9 @@ router.post('/unpaid', async (req: Request, res: Response) => {
 
 
 
-router.post('/', upload.single('referenceDocument'), async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
     try {
-        const { projectId, projectHead, totalAmount, title, description } = req.body;
-
-        const expenseIds = JSON.parse(req.body.expenseIds)
-
-        let referenceId: mongoose.Types.ObjectId | null = null
-
-        if (req.file) {
-            const readableStream = new Readable();
-            readableStream.push(req.file.buffer);
-            readableStream.push(null);
-
-            const uploadStream = gfs.openUploadStream(req.file.originalname, {
-                contentType: req.file.mimetype || 'application/octet-stream'
-            });
-
-            await new Promise<void>((resolve, reject) => {
-                readableStream.pipe(uploadStream)
-                    .on("error", (err) => reject(err))
-                    .on("finish", () => {
-                        referenceId = uploadStream.id;
-                        resolve();
-                    });
-            });
-        }
+        const { projectId, projectHead, totalAmount, title, description, referenceURL, expenseIds } = req.body;
 
         const project = await ProjectModel.findById(projectId)
 
@@ -354,7 +271,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             title,
             description,
             submittedAt: new Date(),
-            reference_id: referenceId,
+            referenceURL,
             year_or_installment: getCurrentIndex(project)
         });
 
@@ -374,57 +291,9 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
     }
 });
 
-router.post('/:id/reference', upload.single('referenceDocument'), async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params
-
-        if (!req.file) {
-            res.status(400).send({ message: "Please upload a file!" })
-            return
-        }
-
-        const reimbursement = await ReimbursementModel.findById(id)
-
-        if (!reimbursement) {
-            res.status(404).send({ message: "Reimbursement not found!" })
-            return
-        }
-
-        let referenceId: mongoose.Types.ObjectId | null = null
-
-        const readableStream = new Readable();
-        readableStream.push(req.file.buffer);
-        readableStream.push(null);
-
-        const uploadStream = gfs.openUploadStream(req.file.originalname, {
-            contentType: req.file.mimetype || 'application/octet-stream'
-        });
-
-        await new Promise<void>((resolve, reject) => {
-            readableStream.pipe(uploadStream)
-                .on("error", (err) => reject(err))
-                .on("finish", () => {
-                    referenceId = uploadStream.id;
-                    resolve();
-                });
-        });
-
-        reimbursement.reference_id = referenceId
-        await reimbursement.save()
-        res.send({ message: "Reference upload sucessful!" })
-    }
-    catch (err) {
-        console.log(err)
-        res.status(500).send({ message: `Error Occured : ${(err as Error).message}` })
-    }
-})
-
-router.put('/:id', upload.single('referenceDocument'), async (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { project, projectHead, totalAmount, title, description } = req.body;
-
-    const expenses = JSON.parse(req.body.expenses)
-    const removedExpenses = JSON.parse(req.body.removedExpenses)
+    const { project, projectHead, totalAmount, title, description, referenceURL, expenses, removedExpenses } = req.body;
 
     try {
 
@@ -435,38 +304,13 @@ router.put('/:id', upload.single('referenceDocument'), async (req: Request, res:
             return;
         }
 
-        let referenceId: mongoose.Types.ObjectId | null = null
-
-        if (req.file) {
-            const readableStream = new Readable();
-            readableStream.push(req.file.buffer);
-            readableStream.push(null);
-
-            const uploadStream = gfs.openUploadStream(req.file.originalname, {
-                contentType: req.file.mimetype || 'application/octet-stream'
-            });
-
-            await new Promise<void>((resolve, reject) => {
-                readableStream.pipe(uploadStream)
-                    .on("error", (err) => reject(err))
-                    .on("finish", () => {
-                        referenceId = uploadStream.id;
-                        resolve();
-                    });
-            });
-
-            if (reimbursementToBeEdited?.reference_id) {
-                await gfs.delete(reimbursementToBeEdited.reference_id);
-            }
-        }
-
         await ExpenseModel.updateMany(
             { _id: { $in: removedExpenses } },
             { $set: { reimbursedID: null } }
         )
 
         await ReimbursementModel.updateOne({ _id: id }, {
-            $set: { project, projectHead, title, description, totalAmount, expenses, reference_id: referenceId ?? reimbursementToBeEdited.reference_id }
+            $set: { project, projectHead, title, description, totalAmount, expenses, referenceURL }
         })
 
         res.status(200).json();
@@ -485,12 +329,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
         if (!deletedReimbursement) {
             res.status(404).json({ message: 'Reimbursement not found' });
             return;
-        }
-
-        const referenceId = deletedReimbursement.reference_id;
-
-        if (referenceId) {
-            await gfs.delete(referenceId);
         }
 
         await ExpenseModel.updateMany({ reimbursedID: id }, { reimbursedID: null });

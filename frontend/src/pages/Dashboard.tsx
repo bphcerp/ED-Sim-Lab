@@ -78,7 +78,7 @@ const DashBoard: FunctionComponent = () => {
                 </Button>
             </div>
 
-            <ProjectList />
+            <ProjectList key={openModal ? "true" : "false"} />
         </div>
     );
 };

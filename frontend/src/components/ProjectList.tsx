@@ -9,7 +9,6 @@ import TableCustom from "./TableCustom";
 import { Project } from "../types";
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import EditProjectModal from "./EditProjectModal";
-import PDFLink from "./PDFLink";
 import { getCurrentIndex } from "../helper";
 
 const ProjectList: FunctionComponent = () => {
@@ -57,7 +56,7 @@ const ProjectList: FunctionComponent = () => {
         }),
         columnHelper.accessor("project_title", {
             header: "Project Title",
-            cell: (info) => (
+                        cell: (info) => (
                 <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
                     {info.getValue()}
                 </Link>
@@ -76,15 +75,13 @@ const ProjectList: FunctionComponent = () => {
                 info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
             enableColumnFilter: false,
         }),
-        columnHelper.accessor(
-            (row) => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1),
-            {
-                header: "Project Type",
-                meta: {
-                    filterType: "dropdown",
-                },
+        columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
+            header: "Project Type",
+            cell: ({ getValue }) => <span className={getValue() === 'Yearly' ? 'text-violet-500' : 'text-yellow-400'}>{getValue()}</span>,
+            meta: {
+                filterType: "dropdown"
             }
-        ),
+        }),
         columnHelper.accessor(row => getCurrentIndex(row) >= 0 ? "Ongoing" : "Ended", {
             header: 'Status',
             cell: info => {
@@ -108,14 +105,9 @@ const ProjectList: FunctionComponent = () => {
                 }),
             enableColumnFilter: false,
         }),
-        columnHelper.accessor("sanction_letter_file_id", {
+        columnHelper.accessor("sanction_letter_url", {
             header: "Sanction Letter",
-            cell: ({ row }) =>
-                row.original.sanction_letter_file_id ? (
-                    <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/sanction_letter`}>View</PDFLink>
-                ) : (
-                    "-"
-                ),
+            cell: ({ getValue }) => <div className="flex justify-center">{getValue() ? <Link target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" to={getValue()!}>View</Link> : "-"}</div>,
             enableColumnFilter: false,
             enableSorting: false,
         }),

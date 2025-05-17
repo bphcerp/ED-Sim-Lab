@@ -1,6 +1,6 @@
-import { Button, Label, Modal, TextInput, FileInput, Radio, Textarea, Checkbox } from "flowbite-react";
+import { Button, Label, Modal, TextInput, Radio, Textarea, Checkbox } from "flowbite-react";
 import { Dispatch, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
-import { toastError, toastSuccess, toastWarn } from "../toasts";
+import { toastError, toastSuccess } from "../toasts";
 import { Member } from "../types";
 
 interface AddProjectProps {
@@ -19,7 +19,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [numberOfInstallments, setNumberOfInstallments] = useState<number>(0);
   const [newHeadName, setNewHeadName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const [sanctionLetter, setSanctionLetter] = useState<File | null>(null);
+  const [sanctionLetter, setSanctionLetter] = useState<string | null>(null);
   const [description, setDescription] = useState<string>("");
   const [faculties, setFaculties] = useState<Array<Member>>([])
   const [negativeHeads, setNegativeHeads] = useState<Array<string>>([])
@@ -144,36 +144,39 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     e.preventDefault();
     setLoading(true);
 
-    const totalAmount = Object.values(headTotals).reduce((sum, value) => sum + value, 0)
+    const totalAmount = Object.values(headTotals).reduce((sum, value) => sum + value, 0);
 
-    const formData = new FormData();
-    formData.append("funding_agency", fundingAgency);
-    formData.append("project_id", projectID);
-    formData.append("project_title", projectTitle);
-    formData.append("start_date", startDate ? new Date(startDate).toISOString() : "");
-    formData.append("end_date", endDate ? new Date(endDate).toISOString() : "");
-    formData.append("total_amount", totalAmount!.toString());
-    formData.append("project_type", projectType);
-    formData.append("pis", JSON.stringify(pis));
-    formData.append("copis", JSON.stringify(coPIs));
-    formData.append("project_heads", JSON.stringify(projectHeads));
-    formData.append("negative_heads", JSON.stringify(negativeHeads));
+    const payload = {
+      funding_agency: fundingAgency,
+      project_id: projectID,
+      project_title: projectTitle,
+      start_date: startDate ? new Date(startDate).toISOString() : "",
+      end_date: endDate ? new Date(endDate).toISOString() : "",
+      total_amount: totalAmount,
+      project_type: projectType,
+      pis,
+      copis: coPIs,
+      project_heads: projectHeads,
+      negative_heads: negativeHeads,
+      description,
+    };
 
     if (projectType === "invoice" && numberOfInstallments > 0) {
-      formData.append("installments", JSON.stringify(installmentDates));
+      (payload as any).installments = installmentDates;
     }
 
     if (sanctionLetter) {
-      formData.append("sanction_letter", sanctionLetter);
+      (payload as any).sanction_letter_url = sanctionLetter;
     }
-
-    formData.append("description", description);
 
     try {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include",
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -332,7 +335,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                 )}
               </div>
             </div>
-            
+
             <div>
               <Label value="Project Type" />
               <div className="flex space-x-4">
@@ -518,7 +521,6 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
             </div>
 
             <div className="space-y-2">
-              {/* Add other fields like Total Amount, Description, etc */}
               <div>
                 <Label htmlFor="total_amount" value="Total Amount" />
                 <TextInput
@@ -536,35 +538,15 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter description"
-                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="sanction_letter" value="Sanction Letter" />
-                <FileInput
+                <Label htmlFor="sanction_letter" value="Sanction Letter Link" />
+                <TextInput
                   id="sanction_letter"
-                  onChange={(e) => {
-                    if (!e.target.files) return
-                    const file = e.target.files[0]
-                    if (file && file.type !== "application/pdf") {
-                      toastWarn("Please upload a PDF file.");
-                      e.target.value = ""
-                      return
-                    }
-
-                    const maxSizeInMB = 10;
-                    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
-                    if (file && file.size > maxSizeInBytes) {
-                      toastWarn(`File size exceeds ${maxSizeInMB} MB. Please upload a smaller file.`);
-                      e.target.value = ""
-                      return;
-                    }
-
-                    setSanctionLetter(e.target.files ? e.target.files[0] : null)
-                  }}
-                  accept="application/pdf"
-                  required
+                  value={sanctionLetter ?? ""}
+                  onChange={(e) => setSanctionLetter(e.target.value)}
                 />
               </div>
             </div>
